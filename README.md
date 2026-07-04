@@ -20,12 +20,8 @@ The project follows a modular three-layer architecture:
 2. **Backend Layer:** Implemented using **Flask**, managing HTTP requests, business logic, REST APIs, batch processing, and prediction generation.
 3. **Presentation Layer:** Built with HTML5, CSS3, JavaScript, Jinja2 templates, and Bootstrap for a responsive user experience.
 
-## 👥 Team Members
-| S.No | Name | Role | Email |
-|------|------|------|-------|
-| 1. | **Yaswanth Ganesh R** | Team Lead | r210024@rguktrkv.ac.in |
-| 2. | **Salma Shaik** | Member | sheksalma14@gmail.com |
-| 3. | **Sandhya Mondam** | Member | r210960@rguktrkv.ac.in |
+## 👥 Project By
+**Shaik Shahil** - shaik.shahil9959@gmail.com
 
 ## 🚀 How to Run the Application
 
