@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+{% block title %}Smart Lender — Batch Scoring{% endblock %}
+
+{% block content %}
+<div class="page">
+
+  <div class="page-header">
+    <p class="eyebrow">Batch Processing &middot; Bulk Eligibility Screening</p>
+    <h1>Upload applicant CSV</h1>
+    <p>Upload a CSV file containing multiple applicant rows and receive instant eligibility predictions for every record. Download the results as a ready-to-share report.</p>
+  </div>
+
+  {% if model_error %}
+    <div class="alert"><strong>Model not loaded.</strong> {{ model_error }}</div>
+  {% endif %}
+
+  {% if error %}
+    <div class="alert">{{ error }}</div>
+  {% endif %}
+
+  <div class="batch-grid">
+
+    <!-- Upload form -->
+    <div class="ledger batch-upload-card">
+      <div class="ledger-section">
+        <h2><span class="num">1</span>Upload CSV File</h2>
+
+        <form id="batch-form" action="{{ url_for('batch') }}" method="POST" enctype="multipart/form-data">
+          <div class="drop-zone" id="drop-zone" role="button" tabindex="0" aria-label="Drop CSV file here or click to browse">
+            <div class="drop-icon" aria-hidden="true">📂</div>
+            <p class="drop-title">Drag &amp; drop your CSV here</p>
+            <p class="drop-sub">or click to browse — <strong>.csv files only</strong></p>
+            <input type="file" id="csv-file-input" name="csv_file" accept=".csv" class="drop-input" required>
+            <span class="drop-filename" id="drop-filename">No file selected</span>
+          </div>
+
+          <div class="batch-hint-box">
+            <h4>Required column names</h4>
+            <code>Gender, Married, Dependents, Education, Self_Employed, ApplicantIncome, CoapplicantIncome, LoanAmount, Loan_Amount_Term, Credit_History, Property_Area</code>
+            <p class="hint" style="margin-top:0.5rem">Same format as the training dataset. Any extra columns are preserved in the output.</p>
+          </div>
+
+          <div class="ledger-footer" style="margin-top:1.5rem">
+            <button type="submit" class="btn-submit" id="batch-submit">
+              <span class="btn-label">Run batch prediction &rarr;</span>
+              <span class="btn-spinner" aria-hidden="true"></span>
+            </button>
+          </div>
+        </form>
+
+      </div>
+    </div>
+
+    <!-- Results panel -->
+    <aside class="rail">
+
+      {% if download_ready %}
+      <div class="rail-card batch-results-card">
+        <h3>✅ Batch Complete</h3>
+        <div class="batch-stat-row">
+          <div class="batch-stat"><span class="batch-stat-num">{{ total }}</span><span>Total</span></div>
+          <div class="batch-stat approved-stat"><span class="batch-stat-num">{{ approved }}</span><span>Approved</span></div>
+          <div class="batch-stat declined-stat"><span class="batch-stat-num">{{ declined }}</span><span>Declined</span></div>
+        </div>
+        {% if avg_conf %}
+          <p class="hint">Average confidence: <strong>{{ avg_conf }}%</strong></p>
+        {% endif %}
+        <a href="{{ url_for('batch_download') }}" class="btn-download" id="download-btn">
+          ⬇ Download Results CSV
+        </a>
+      </div>
+      {% endif %}
+
+      <div class="rail-card">
+        <h3>📋 CSV Format Guide</h3>
+        <p>Your file must have a header row with the column names shown. Values should match the training data exactly:</p>
+        <ul class="format-list">
+          <li><code>Gender</code>: <em>Male</em> or <em>Female</em></li>
+          <li><code>Married</code>: <em>Yes</em> or <em>No</em></li>
+          <li><code>Dependents</code>: <em>0, 1, 2, 3+</em></li>
+          <li><code>Education</code>: <em>Graduate</em> or <em>Not Graduate</em></li>
+          <li><code>Self_Employed</code>: <em>Yes</em> or <em>No</em></li>
+          <li><code>ApplicantIncome</code>: monthly income in dollars</li>
+          <li><code>LoanAmount</code>: amount in thousands</li>
+          <li><code>Credit_History</code>: <em>1</em> (good) or <em>0</em> (bad)</li>
+          <li><code>Property_Area</code>: <em>Urban, Semiurban, Rural</em></li>
+        </ul>
+      </div>
+
+      <div class="rail-card">
+        <h3>💡 Tips</h3>
+        <p>The output CSV will include three new columns:</p>
+        <ul class="format-list">
+          <li><code>Predicted_Status</code>: Y or N</li>
+          <li><code>Approved</code>: Yes or No</li>
+          <li><code>Confidence_Pct</code>: 0–100%</li>
+        </ul>
+      </div>
+
+    </aside>
+
+  </div>
+
+  {% if preview_html %}
+  <div class="preview-section">
+    <h2 class="preview-title">Preview — First 5 Rows of Input</h2>
+    <div class="preview-scroll">
+      {{ preview_html | safe }}
+    </div>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}

@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}Smart Lender — Model &amp; Methodology{% endblock %}
+
+{% block content %}
+<div class="page">
+
+  <div class="page-header">
+    <p class="eyebrow">Methodology &middot; Model Details</p>
+    <h1>What's under the hood</h1>
+    <p>Smart Lender trains <strong>five classifiers</strong> on historical applicant records — including cross-validation and ROC-AUC scoring — then keeps whichever one generalizes best. Below are the full metrics and pipeline details.</p>
+  </div>
+
+  <!-- Model metrics grid -->
+  <div class="about-grid">
+    {% if model_comparison %}
+      {% for name, stats in model_comparison.items() %}
+        {% if name != 'best_model' %}
+        <div class="metric-card {% if name == model_comparison.best_model %}metric-best{% endif %}">
+          <div class="label">{{ name }}</div>
+          <div class="value">{{ stats.test_accuracy }}%</div>
+          <p style="margin-top:0.25rem;font-size:0.8rem;color:var(--ink-soft);">
+            test accuracy &middot; {{ stats.train_accuracy }}% train
+          </p>
+          {% if stats.cv_mean %}
+          <div class="sub-value">CV: {{ stats.cv_mean }}% ± {{ stats.cv_std }}%</div>
+          {% endif %}
+          {% if stats.roc_auc %}
+          <div class="sub-value">ROC-AUC: {{ stats.roc_auc }}</div>
+          {% endif %}
+          {% if name == model_comparison.best_model %}
+          <span class="best-badge">★ Best Model</span>
+          {% endif %}
+        </div>
+        {% endif %}
+      {% endfor %}
+    {% else %}
+      <p><em>No trained models found yet — run <code>python train_model.py</code>.</em></p>
+    {% endif %}
+  </div>
+
+  <!-- Feature importances -->
+  {% if feature_importances %}
+  <h2 style="font-family:var(--font-display);font-size:1.4rem;margin-top:2.5rem;margin-bottom:0.5rem;">
+    Feature Importances
+  </h2>
+  <p style="color:var(--ink-soft);font-size:0.9rem;margin-bottom:1.25rem;">
+    Relative contribution of each input feature to the best model's predictions.
+  </p>
+  <div class="fi-table">
+    {% for fi in feature_importances %}
+    <div class="fi-row">
+      <span class="fi-label">{{ fi.label }}</span>
+      <div class="fi-bar-wrap">
+        <div class="fi-bar" style="width: {{ [fi.importance * 4, 100] | min }}%; background: {% if fi.importance > 15 %}var(--vault-green){% elif fi.importance > 8 %}var(--gold){% else %}var(--ledger-line){% endif %}"></div>
+      </div>
+      <span class="fi-score">{{ fi.importance }}%</span>
+    </div>
+    {% endfor %}
+  </div>
+  <style>
+    .fi-table { display:flex; flex-direction:column; gap:0.35rem; max-width:620px; margin-bottom:2rem; }
+    .fi-row   { display:flex; align-items:center; gap:0.75rem; }
+    .fi-label { font-size:0.82rem; color:var(--ink-soft); min-width:160px; flex-shrink:0; }
+    .fi-bar-wrap { flex:1; height:9px; background:var(--parchment-dim); border-radius:4px; overflow:hidden; }
+    .fi-bar   { height:100%; border-radius:4px; transition:width 0.6s ease; }
+    .fi-score { font-family:var(--font-mono); font-size:0.75rem; font-weight:600; color:var(--ink); min-width:38px; text-align:right; }
+  </style>
+  {% endif %}
+
+  <!-- Pipeline steps -->
+  <h2 style="font-family:var(--font-display);font-size:1.4rem;margin-top:2rem;">Pipeline</h2>
+  <ol class="pipeline-steps">
+    <li>
+      <strong>Ingest</strong>
+      <span>Load applicant records: demographics, income, loan terms, credit history, and property area.</span>
+    </li>
+    <li>
+      <strong>Clean</strong>
+      <span>Impute missing categorical fields with the mode and missing numeric fields with the median. Normalize "3+" dependents bucket.</span>
+    </li>
+    <li>
+      <strong>Engineer</strong>
+      <span>Derive total household income, log-transform skewed fields (LoanAmount, TotalIncome) to tame outliers.</span>
+    </li>
+    <li>
+      <strong>Encode &amp; scale</strong>
+      <span>Label-encode categorical fields, then standardize all features so every model sees comparable inputs.</span>
+    </li>
+    <li>
+      <strong>Train five candidates with CV</strong>
+      <span>Logistic Regression, Decision Tree, Random Forest, KNN, and XGBoost — each evaluated with 5-fold cross-validation, test accuracy, and ROC-AUC.</span>
+    </li>
+    <li>
+      <strong>Select &amp; serve</strong>
+      <span>The candidate with the highest held-out test accuracy is persisted along with feature importances and loaded by this Flask app for real-time scoring.</span>
+    </li>
+  </ol>
+
+  <h2 style="font-family:var(--font-display);font-size:1.4rem;margin-top:2rem;">Inputs used</h2>
+  <p style="color:var(--ink-soft);font-size:0.92rem;max-width:680px;">
+    Gender, marital status, dependents, education, employment status, applicant and co-applicant income, requested loan amount, loan term, credit history, and property area. None of these are stand-ins for protected-class screening — they mirror the fields lenders already collect on a standard application.
+  </p>
+
+  <div style="margin-top:1.5rem;">
+    <a href="{{ url_for('reports') }}">
+      <button type="button" class="btn-secondary">View full charts &amp; reports &rarr;</button>
+    </a>
+  </div>
+
+</div>
+{% endblock %}

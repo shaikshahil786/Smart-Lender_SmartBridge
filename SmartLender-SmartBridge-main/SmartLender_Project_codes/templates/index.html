@@ -1,0 +1,291 @@
+{% extends "base.html" %}
+{% block title %}Smart Lender — New Application{% endblock %}
+
+{% block content %}
+<div class="page">
+
+  <div class="page-header">
+    <p class="eyebrow">Ledger Entry &middot; New Application</p>
+    <h1>Screen a loan applicant</h1>
+    <p>Enter the applicant's details below. The trained model returns an instant eligibility read alongside a confidence score, so you can prioritize manual review where it matters most.</p>
+  </div>
+
+  {% if model_error %}
+    <div class="alert">
+      <strong>Model not loaded.</strong> {{ model_error }}
+    </div>
+  {% endif %}
+
+  <div class="ledger-grid">
+
+    <form class="ledger" id="application-form" action="{{ url_for('predict') }}" method="POST" novalidate>
+
+      <!-- Section 1: Applicant Profile -->
+      <div class="ledger-section">
+        <h2><span class="num">1</span>Applicant Profile</h2>
+        <div class="field-grid">
+
+          <div class="field">
+            <label for="gender">Gender</label>
+            <div class="radio-row">
+              <div class="radio-pill">
+                <input type="radio" id="gender-male" name="gender" value="Male" checked>
+                <label for="gender-male">Male</label>
+              </div>
+              <div class="radio-pill">
+                <input type="radio" id="gender-female" name="gender" value="Female">
+                <label for="gender-female">Female</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="married">Marital Status</label>
+            <div class="radio-row">
+              <div class="radio-pill">
+                <input type="radio" id="married-yes" name="married" value="Yes" checked>
+                <label for="married-yes">Married</label>
+              </div>
+              <div class="radio-pill">
+                <input type="radio" id="married-no" name="married" value="No">
+                <label for="married-no">Single</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="dependents">Dependents</label>
+            <select id="dependents" name="dependents" required>
+              <option value="0">0</option>
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3+">3 or more</option>
+            </select>
+          </div>
+
+          <div class="field">
+            <label for="education">Education</label>
+            <div class="radio-row">
+              <div class="radio-pill">
+                <input type="radio" id="edu-grad" name="education" value="Graduate" checked>
+                <label for="edu-grad">Graduate</label>
+              </div>
+              <div class="radio-pill">
+                <input type="radio" id="edu-undergrad" name="education" value="Not Graduate">
+                <label for="edu-undergrad">Not Graduate</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="self_employed">Self-Employed</label>
+            <div class="radio-row">
+              <div class="radio-pill">
+                <input type="radio" id="self-no" name="self_employed" value="No" checked>
+                <label for="self-no">No</label>
+              </div>
+              <div class="radio-pill">
+                <input type="radio" id="self-yes" name="self_employed" value="Yes">
+                <label for="self-yes">Yes</label>
+              </div>
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="property_area">Property Area</label>
+            <select id="property_area" name="property_area" required>
+              <option value="Urban">Urban</option>
+              <option value="Semiurban">Semiurban</option>
+              <option value="Rural">Rural</option>
+            </select>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Section 2: Income & Loan Terms -->
+      <div class="ledger-section">
+        <h2><span class="num">2</span>Income &amp; Loan Terms</h2>
+        <div class="field-grid">
+
+          <div class="field">
+            <label for="applicant_income">Applicant Monthly Income</label>
+            <div class="prefix-input">
+              <span>$</span>
+              <input type="number" id="applicant_income" name="applicant_income"
+                     min="0" step="1" placeholder="5000" required autocomplete="off">
+            </div>
+          </div>
+
+          <div class="field">
+            <label for="coapplicant_income">Co-applicant Monthly Income</label>
+            <div class="prefix-input">
+              <span>$</span>
+              <input type="number" id="coapplicant_income" name="coapplicant_income"
+                     min="0" step="1" placeholder="0" value="0" autocomplete="off">
+            </div>
+            <span class="hint">Leave as 0 if none</span>
+          </div>
+
+          <div class="field">
+            <label for="loan_amount">Requested Loan Amount</label>
+            <div class="prefix-input">
+              <span>$</span>
+              <input type="number" id="loan_amount" name="loan_amount"
+                     min="0" step="1" placeholder="150" required autocomplete="off">
+            </div>
+            <span class="hint">In thousands, e.g. 150 = $150,000</span>
+          </div>
+
+          <div class="field">
+            <label for="loan_amount_term">Loan Term</label>
+            <select id="loan_amount_term" name="loan_amount_term" required>
+              <option value="360" selected>360 months (30 yr)</option>
+              <option value="300">300 months (25 yr)</option>
+              <option value="240">240 months (20 yr)</option>
+              <option value="180">180 months (15 yr)</option>
+              <option value="120">120 months (10 yr)</option>
+              <option value="84">84 months (7 yr)</option>
+              <option value="60">60 months (5 yr)</option>
+              <option value="36">36 months (3 yr)</option>
+              <option value="12">12 months (1 yr)</option>
+            </select>
+          </div>
+
+          <div class="field span-2">
+            <label>Credit History</label>
+            <div class="radio-row">
+              <div class="radio-pill">
+                <input type="radio" id="credit-good" name="credit_history" value="1" checked>
+                <label for="credit-good">✓ Meets guidelines</label>
+              </div>
+              <div class="radio-pill">
+                <input type="radio" id="credit-bad" name="credit_history" value="0">
+                <label for="credit-bad">✗ Does not meet guidelines</label>
+              </div>
+            </div>
+            <span class="hint">Whether the applicant's credit history meets lender guidelines</span>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="ledger-footer">
+        <span class="note">Model: {{ model_comparison.best_model or 'XGBoost' }}</span>
+        <button type="submit" id="submit-btn" class="btn-submit">
+          <span class="btn-label">Run eligibility check &rarr;</span>
+          <span class="btn-spinner" aria-hidden="true"></span>
+        </button>
+      </div>
+
+    </form>
+
+    <!-- Right rail -->
+    <aside class="rail">
+
+      <!-- Live EMI calculator -->
+      <div class="rail-card emi-card">
+        <h3>💰 Live EMI Calculator</h3>
+        <div class="emi-display">
+          <div class="emi-main">
+            <span class="emi-label">Monthly Payment</span>
+            <span class="emi-value" id="emi-value">—</span>
+          </div>
+          <div class="emi-ring-wrap">
+            <svg class="emi-ring" viewBox="0 0 80 80" aria-hidden="true">
+              <circle class="ring-bg"    cx="40" cy="40" r="32"/>
+              <circle class="ring-fill"  cx="40" cy="40" r="32" id="dti-ring-fill"/>
+            </svg>
+            <span class="emi-ring-label" id="dti-label">—</span>
+            <span class="emi-ring-sub">DTI</span>
+          </div>
+        </div>
+        <div class="emi-breakdown">
+          <div class="emi-row">
+            <span>Total Repayment</span>
+            <span id="emi-total">—</span>
+          </div>
+          <div class="emi-row">
+            <span>Total Interest</span>
+            <span id="emi-interest">—</span>
+          </div>
+          <div class="emi-row">
+            <span>Assumed Rate</span>
+            <span>8.5% p.a.</span>
+          </div>
+        </div>
+        <p class="hint" style="margin-top:0.6rem">Updates live as you type. DTI = debt-to-income ratio.</p>
+      </div>
+
+      <!-- Session stats -->
+      <div class="rail-card stats-card">
+        <h3>📊 Session Statistics</h3>
+        <div class="stat-grid">
+          <div class="stat-box">
+            <span class="stat-num" id="stat-total" data-target="{{ stats.total }}">0</span>
+            <span class="stat-desc">Applications</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-num" id="stat-rate" data-target="{{ stats.approval_rate }}">0</span>
+            <span class="stat-desc">Approval Rate %</span>
+          </div>
+          <div class="stat-box">
+            <span class="stat-num" id="stat-conf" data-target="{{ stats.avg_confidence }}">0</span>
+            <span class="stat-desc">Avg Confidence %</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Active model card -->
+      <div class="rail-card">
+        <h3>⚙️ Active Model</h3>
+        <p>Best performer across {% if model_comparison %}{{ model_comparison|length - 1 }}{% else %}4{% endif %} trained classifiers, selected automatically on held-out test accuracy.</p>
+        {% if model_comparison %}
+          {% for name, stats in model_comparison.items() %}
+            {% if name != 'best_model' %}
+              <div class="model-stat-row">
+                <span class="name {% if name == model_comparison.best_model %}best{% endif %}">{{ name }}</span>
+                <div class="model-stat-bars">
+                  <span class="acc">{{ stats.test_accuracy }}%</span>
+                  {% if stats.roc_auc %}
+                    <span class="auc">AUC {{ stats.roc_auc }}</span>
+                  {% endif %}
+                </div>
+              </div>
+            {% endif %}
+          {% endfor %}
+        {% else %}
+          <p><em>Train the model to see stats here.</em></p>
+        {% endif %}
+      </div>
+
+      <!-- Recent applications -->
+      {% if recent %}
+      <div class="rail-card">
+        <h3>🕐 Recent Applications</h3>
+        {% for entry in recent %}
+          <div class="recent-row {% if entry.approved %}recent-approved{% else %}recent-declined{% endif %}">
+            <span class="recent-badge">{% if entry.approved %}✓{% else %}✗{% endif %}</span>
+            <div class="recent-info">
+              <span class="recent-detail">${{ entry.applicant_income }}/mo &middot; ${{ entry.loan_amount }}k</span>
+              <span class="recent-ts">{{ entry.ts }}</span>
+            </div>
+            <span class="recent-conf">{{ entry.probability }}%</span>
+          </div>
+        {% endfor %}
+        <a href="{{ url_for('history') }}" class="view-all-link">View all history &rarr;</a>
+      </div>
+      {% endif %}
+
+      <!-- How to read the result -->
+      <div class="rail-card">
+        <h3>📖 How to Read the Result</h3>
+        <p>A confidence score above <strong>80%</strong> reflects strong agreement with historical approvals. Scores closer to <strong>50%</strong> sit near the model's decision boundary and may warrant a manual second look.</p>
+      </div>
+
+    </aside>
+
+  </div>
+
+</div>
+{% endblock %}

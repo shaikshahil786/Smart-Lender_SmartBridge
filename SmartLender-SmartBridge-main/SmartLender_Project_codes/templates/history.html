@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}Smart Lender — Application History{% endblock %}
+
+{% block content %}
+<div class="page">
+
+  <div class="page-header">
+    <p class="eyebrow">Session Log &middot; Recent Applications</p>
+    <h1>Application History</h1>
+    <p>A log of loan applications screened in this browser session. History is stored temporarily and cleared when you close the browser.</p>
+  </div>
+
+  <!-- Session stats -->
+  {% if stats.total > 0 %}
+  <div class="history-stats">
+    <div class="h-stat-box">
+      <span class="h-stat-num">{{ stats.total }}</span>
+      <span class="h-stat-desc">Applications</span>
+    </div>
+    <div class="h-stat-box h-stat-approved">
+      <span class="h-stat-num">{{ stats.approval_rate }}%</span>
+      <span class="h-stat-desc">Approval Rate</span>
+    </div>
+    <div class="h-stat-box">
+      <span class="h-stat-num">{{ stats.avg_confidence }}%</span>
+      <span class="h-stat-desc">Avg Confidence</span>
+    </div>
+  </div>
+  {% endif %}
+
+  {% if history %}
+
+  <div class="history-card ledger">
+    <table class="history-table">
+      <thead>
+        <tr>
+          <th>#</th>
+          <th>Timestamp</th>
+          <th>Decision</th>
+          <th>Confidence</th>
+          <th>Income</th>
+          <th>Loan</th>
+          <th>Education</th>
+          <th>Area</th>
+          <th>Credit</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for entry in history %}
+        <tr class="history-row {% if entry.approved %}hist-approved{% else %}hist-declined{% endif %}">
+          <td class="hist-idx">{{ loop.index }}</td>
+          <td class="hist-ts">{{ entry.ts }}</td>
+          <td class="hist-decision">
+            <span class="verdict-badge {% if entry.approved %}badge-approved{% else %}badge-declined{% endif %}">
+              {% if entry.approved %}✓ Approved{% else %}✗ Declined{% endif %}
+            </span>
+          </td>
+          <td class="hist-conf">
+            {% if entry.probability %}
+              <div class="mini-bar-wrap">
+                <div class="mini-bar {% if entry.approved %}mini-bar-approved{% else %}mini-bar-declined{% endif %}"
+                     style="width: {{ entry.probability }}%"></div>
+                <span>{{ entry.probability }}%</span>
+              </div>
+            {% else %}—{% endif %}
+          </td>
+          <td>${{ entry.applicant_income }}/mo</td>
+          <td>${{ entry.loan_amount }}k</td>
+          <td>{{ entry.education }}</td>
+          <td>{{ entry.property_area }}</td>
+          <td>{% if entry.credit_history == '1' %}✓{% else %}✗{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="history-actions">
+    <a href="{{ url_for('home') }}">
+      <button type="button" class="btn-secondary">+ New Application</button>
+    </a>
+    <form action="{{ url_for('history_clear') }}" method="POST" style="display:inline">
+      <button type="submit" class="btn-danger" onclick="return confirm('Clear all history?')">
+        🗑 Clear History
+      </button>
+    </form>
+  </div>
+
+  {% else %}
+    <div class="empty-state">
+      <div class="empty-icon" aria-hidden="true">📋</div>
+      <h2>No applications yet</h2>
+      <p>Submit your first loan application to see the history log here.</p>
+      <a href="{{ url_for('home') }}">
+        <button type="button" class="btn-submit" style="margin-top:1rem">Start screening &rarr;</button>
+      </a>
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}
