@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+    <title>SmartLender</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='style.css') }}">
+
+</head>
+
+<body>
+
+<div class="container">
+
+<h2>SmartLender Loan Approval Prediction</h2>
+
+<form action="/predict" method="POST">
+
+<label>Gender</label>
+
+<select name="Gender">
+
+<option value="1">Male</option>
+
+<option value="0">Female</option>
+
+</select>
+
+
+<label>Married</label>
+
+<select name="Married">
+
+<option value="1">Yes</option>
+
+<option value="0">No</option>
+
+</select>
+
+
+<label>Dependents</label>
+
+<input type="number" name="Dependents" required>
+
+
+<label>Education</label>
+
+<select name="Education">
+
+<option value="0">Graduate</option>
+
+<option value="1">Not Graduate</option>
+
+</select>
+
+
+<label>Self Employed</label>
+
+<select name="Self_Employed">
+
+<option value="1">Yes</option>
+
+<option value="0">No</option>
+
+</select>
+
+
+<label>Applicant Income</label>
+
+<input type="number"
+name="ApplicantIncome"
+required>
+
+
+<label>Coapplicant Income</label>
+
+<input type="number"
+name="CoapplicantIncome"
+required>
+
+
+<label>Loan Amount</label>
+
+<input type="number"
+name="LoanAmount"
+required>
+
+
+<label>Loan Amount Term</label>
+
+<input type="number"
+name="Loan_Amount_Term"
+required>
+
+
+<label>Credit History</label>
+
+<select name="Credit_History">
+
+<option value="1">Good</option>
+
+<option value="0">Bad</option>
+
+</select>
+
+
+<label>Property Area</label>
+
+<select name="Property_Area">
+
+<option value="0">Rural</option>
+
+<option value="1">Semiurban</option>
+
+<option value="2">Urban</option>
+
+</select>
+
+<input type="submit"
+value="Predict Loan">
+
+</form>
+
+</div>
+
+</body>
+
+</html>

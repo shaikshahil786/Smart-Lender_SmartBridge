@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+{% block title %}Smart Lender — Result{% endblock %}
+
+{% block content %}
+<div class="page">
+  <div class="result-wrap">
+
+    {% if error %}
+      <div class="alert" role="alert">{{ error }}</div>
+      <a href="{{ url_for('home') }}"><button type="button" class="btn-secondary">&larr; Back to application</button></a>
+
+    {% else %}
+
+      <!-- Verdict stamp -->
+      <div class="stamp {% if approved %}approved{% else %}declined{% endif %}" role="img"
+           aria-label="{% if approved %}Approved{% else %}Declined{% endif %}">
+        <span class="stamp-text">{% if approved %}Approved{% else %}Declined{% endif %}</span>
+      </div>
+
+      <h1>{% if approved %}Likely to repay{% else %}High default risk{% endif %}</h1>
+
+      <!-- Animated confidence gauge -->
+      {% if probability is not none %}
+      <div class="gauge-wrap" aria-label="Model confidence {{ probability }}%">
+        <svg class="gauge-svg" viewBox="0 0 160 90" aria-hidden="true">
+          <!-- Gauge background arc (180 deg semicircle) -->
+          <path class="gauge-track" d="M 16 80 A 64 64 0 0 1 144 80" fill="none" stroke-width="14" stroke-linecap="round"/>
+          <path class="gauge-fill {% if approved %}gauge-approved{% else %}gauge-declined{% endif %}"
+                id="gauge-arc"
+                d="M 16 80 A 64 64 0 0 1 144 80"
+                fill="none" stroke-width="14" stroke-linecap="round"
+                data-pct="{{ probability }}"/>
+        </svg>
+        <div class="gauge-label">
+          <span class="gauge-pct" id="gauge-pct-text">0%</span>
+          <span class="gauge-sub">Confidence</span>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Feature contribution breakdown -->
+      {% if contributions %}
+      <div class="contributions-card">
+        <h2 class="contributions-title">AI Risk Factor Breakdown</h2>
+        <p class="contributions-desc">How each feature influenced this prediction</p>
+        <div class="contribution-bars" id="contribution-bars">
+          {% for c in contributions %}
+          <div class="contrib-row">
+            <span class="contrib-label">{{ c.label }}</span>
+            <div class="contrib-bar-wrap">
+              <div class="contrib-bar contrib-{{ c.direction }}"
+                   style="--bar-width: 0%"
+                   data-pct="{{ c.importance }}"
+                   data-max="{% for cx in contributions %}{% if loop.first %}{{ cx.importance }}{% endif %}{% endfor %}">
+              </div>
+            </div>
+            <span class="contrib-pct">{{ c.importance }}%</span>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- EMI & DTI info -->
+      {% if monthly_emi %}
+      <div class="emi-result-row">
+        <div class="emi-result-box">
+          <span class="emi-result-label">Est. Monthly EMI</span>
+          <span class="emi-result-val">${{ "{:,.0f}".format(monthly_emi) }}</span>
+        </div>
+        {% if dti %}
+        <div class="emi-result-box {% if dti > 43 %}dti-warn{% elif dti > 36 %}dti-caution{% else %}dti-ok{% endif %}">
+          <span class="emi-result-label">Debt-to-Income Ratio</span>
+          <span class="emi-result-val">{{ dti }}%</span>
+        </div>
+        {% endif %}
+      </div>
+      {% endif %}
+
+      <!-- Application summary table -->
+      <details class="summary-details" open>
+        <summary>Application Summary</summary>
+        <table class="summary-table">
+          <tr><td>Gender</td><td>{{ form_data.gender }}</td></tr>
+          <tr><td>Marital status</td><td>{{ form_data.married }}</td></tr>
+          <tr><td>Dependents</td><td>{{ form_data.dependents }}</td></tr>
+          <tr><td>Education</td><td>{{ form_data.education }}</td></tr>
+          <tr><td>Self-employed</td><td>{{ form_data.self_employed }}</td></tr>
+          <tr><td>Applicant income</td><td>${{ form_data.applicant_income }}/mo</td></tr>
+          <tr><td>Co-applicant income</td><td>${{ form_data.coapplicant_income }}/mo</td></tr>
+          <tr><td>Loan amount</td><td>${{ form_data.loan_amount }}k</td></tr>
+          <tr><td>Loan term</td><td>{{ form_data.loan_amount_term }} months</td></tr>
+          <tr><td>Credit history</td><td>{% if form_data.credit_history == '1' %}✓ Meets guidelines{% else %}✗ Does not meet{% endif %}</td></tr>
+          <tr><td>Property area</td><td>{{ form_data.property_area }}</td></tr>
+        </table>
+      </details>
+
+      <!-- Next steps -->
+      <div class="next-steps {% if approved %}steps-approved{% else %}steps-declined{% endif %}">
+        <h3>Suggested Next Steps</h3>
+        {% if approved %}
+        <ul>
+          <li>Verify income documents and bank statements</li>
+          <li>Conduct property valuation for collateral</li>
+          <li>Final underwriter sign-off and loan disbursement</li>
+        </ul>
+        {% else %}
+        <ul>
+          <li>Request credit report and review flagged items</li>
+          <li>Discuss a lower loan amount or longer term to improve DTI</li>
+          <li>Consider requiring a co-applicant with stronger income</li>
+          <li>Reassess after 6 months of improved credit history</li>
+        </ul>
+        {% endif %}
+      </div>
+
+      <div class="result-actions">
+        <a href="{{ url_for('home') }}">
+          <button type="button" class="btn-secondary">&larr; Screen another applicant</button>
+        </a>
+        <a href="{{ url_for('history') }}">
+          <button type="button" class="btn-ghost">View history</button>
+        </a>
+      </div>
+
+    {% endif %}
+
+  </div>
+</div>
+
+<script>
+// Animate gauge arc and counter on load
+(function() {
+  const arc = document.getElementById('gauge-arc');
+  const pctText = document.getElementById('gauge-pct-text');
+  if (!arc) return;
+
+  const pct = parseFloat(arc.dataset.pct) || 0;
+  const circumference = Math.PI * 64; // half-circle of r=64
+
+  arc.style.strokeDasharray = circumference;
+  arc.style.strokeDashoffset = circumference;
+
+  // Animate
+  let start = null;
+  const duration = 1100;
+  function step(ts) {
+    if (!start) start = ts;
+    const progress = Math.min((ts - start) / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    const offset = circumference * (1 - (pct / 100) * eased);
+    arc.style.strokeDashoffset = offset;
+    pctText.textContent = Math.round(pct * eased) + '%';
+    if (progress < 1) requestAnimationFrame(step);
+  }
+  requestAnimationFrame(step);
+
+  // Animate contribution bars
+  setTimeout(() => {
+    document.querySelectorAll('.contrib-bar').forEach(bar => {
+      const pctVal = parseFloat(bar.dataset.pct) || 0;
+      const maxVal = parseFloat(bar.dataset.max) || 1;
+      const width = Math.max(4, (pctVal / maxVal) * 100);
+      bar.style.setProperty('--bar-width', width + '%');
+      bar.style.width = width + '%';
+    });
+  }, 300);
+})();
+</script>
+{% endblock %}

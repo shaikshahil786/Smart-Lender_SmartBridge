@@ -1,0 +1,61 @@
+{% extends "base.html" %}
+{% block title %}Smart Lender — Reports & Analysis{% endblock %}
+
+{% block content %}
+<div class="page">
+
+  <div class="page-header">
+    <p class="eyebrow">Analytics &middot; Model Performance Reports</p>
+    <h1>Charts &amp; Analysis</h1>
+    <p>Automatically generated charts from the last training run. Run <code>python train_model.py</code> to refresh all charts with the latest data.</p>
+  </div>
+
+  {% if not report_files %}
+    <div class="alert">
+      No report charts found. Run <code>python train_model.py</code> to generate them.
+    </div>
+  {% else %}
+
+    {% if model_comparison %}
+    <div class="about-grid" style="margin-bottom:2.5rem">
+      {% for name, stats in model_comparison.items() %}
+        {% if name != 'best_model' %}
+        <div class="metric-card {% if name == model_comparison.best_model %}metric-best{% endif %}">
+          <div class="label">{{ name }}</div>
+          <div class="value">{{ stats.test_accuracy }}%</div>
+          {% if stats.cv_mean %}
+          <div class="sub-value">CV: {{ stats.cv_mean }}% ± {{ stats.cv_std }}%</div>
+          {% endif %}
+          {% if stats.roc_auc %}
+          <div class="sub-value">AUC: {{ stats.roc_auc }}</div>
+          {% endif %}
+          {% if name == model_comparison.best_model %}
+            <span class="best-badge">★ Best Model</span>
+          {% endif %}
+        </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="reports-grid">
+      {% for report in report_files %}
+      <div class="report-card">
+        <div class="report-img-wrap">
+          <img src="{{ report.url }}" alt="{{ report.title }}" class="report-img" loading="lazy">
+        </div>
+        <div class="report-caption">
+          <h3 class="report-title">{{ report.title }}</h3>
+          <p class="report-desc">{{ report.description }}</p>
+          <a href="{{ report.url }}" download class="report-download-link" target="_blank">
+            ⬇ Download full-size
+          </a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+  {% endif %}
+
+</div>
+{% endblock %}
